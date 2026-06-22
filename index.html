@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -259,6 +260,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="login-field" id="lf-employee">
       <label>Selecione seu nome</label>
       <select id="login-employee"><option value="">Carregando...</option></select>
+    </div>
+    <div class="login-field" id="lf-password" style="display:none">
+      <label>Senha</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="login-btn" onclick="doLogin()"><i class="ti ti-login"></i>Entrar</button>
     <div class="login-error" id="login-error"></div>
@@ -536,6 +541,10 @@ const sb = {
 const EMP_COLORS = ['#f97316','#374151','#c2410c','#6b7280','#9a3412','#1f2937'];
 const EMP_CSS    = ['ec0','ec1','ec2','ec3','ec4','ec5'];
 
+// Nome completo para UI; sigla (short=true) para histórico/calendário
+const dName = (emp, short=false) => !emp ? '—' : (short ? emp.name : (emp.full_name || emp.name));
+const MANAGER_PASSWORD = 'GestorRH';
+
 let S = {
   role: 'employee',
   currentEmployee: null,   // { id, name, admission_date, days_per_year }
@@ -685,7 +694,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const sel = document.getElementById('login-employee');
     sel.innerHTML = '<option value="">Selecione...</option>';
     S.employees.forEach(e => {
-      sel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+      sel.innerHTML += `<option value="${e.id}">${dName(e)}</option>`;
     });
     document.getElementById('login-screen').style.display = 'flex';
   } else {
@@ -705,6 +714,9 @@ function selectRole(role) {
   document.getElementById('pill-employee').classList.toggle('selected', role==='employee');
   document.getElementById('pill-manager').classList.toggle('selected', role==='manager');
   document.getElementById('lf-employee').style.display = role==='employee' ? 'block' : 'none';
+  document.getElementById('lf-password').style.display = role==='manager' ? 'block' : 'none';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').style.display = 'none';
 }
 
 function doLogin() {
@@ -717,13 +729,21 @@ function doLogin() {
     S.currentEmployee = S.employees.find(e => e.id === empId);
     S.role = 'employee';
   } else {
+    const pwd = document.getElementById('login-password').value;
+    if (pwd !== MANAGER_PASSWORD) {
+      errEl.style.display='block';
+      errEl.textContent='Senha incorreta';
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-password').focus();
+      return;
+    }
     S.role = 'manager';
-    S.currentEmployee = { id: 0, name: 'Gestor', admission_date: '' };
+    S.currentEmployee = { id: 0, name: 'Gestor', full_name: 'Gestor / RH', admission_date: '' };
   }
 
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('topbar-avatar').textContent = S.currentEmployee.name.slice(0,2).toUpperCase();
-  document.getElementById('topbar-user').textContent = S.role==='manager' ? 'Gestor / RH' : S.currentEmployee.name;
+  document.getElementById('topbar-user').textContent = S.role==='manager' ? 'Gestor / RH' : dName(S.currentEmployee);
 
   if (S.role === 'manager') {
     document.getElementById('nav-approvals').style.display = 'flex';
@@ -733,12 +753,12 @@ function doLogin() {
   // populate req-employee
   const reqSel = document.getElementById('req-employee');
   reqSel.innerHTML = '<option value="">Selecione...</option>';
-  S.employees.forEach(e => reqSel.innerHTML += `<option value="${e.id}">${e.name}</option>`);
+  S.employees.forEach(e => reqSel.innerHTML += `<option value="${e.id}">${dName(e)}</option>`);
 
   // populate hgrid-emp
   const hSel = document.getElementById('hgrid-emp');
   hSel.innerHTML = '<option value="">Todos</option>';
-  S.employees.forEach(e => hSel.innerHTML += `<option value="${e.id}">${e.name}</option>`);
+  S.employees.forEach(e => hSel.innerHTML += `<option value="${e.id}">${e.name} (${dName(e)})</option>`);
 
   updateApprovalBadge();
   showSector('dashboard');
@@ -784,10 +804,10 @@ function buildTeamCards(container) {
     container.innerHTML += `
     <div class="card" style="border-top:3px solid ${color}">
       <div class="card-head">
-        <div class="card-av" style="background:${color}">${emp.name.slice(0,2)}</div>
+        <div class="card-av" style="background:${color}">${emp.name}</div>
         <div>
-          <div class="card-name">${emp.name} ${onVac ? '<span class="tag tag-vacation" style="font-size:10px">em férias</span>' : ''}</div>
-          <div class="card-sub">Admissão: ${adm} · ${years} ano${years!==1?'s':''}</div>
+          <div class="card-name">${dName(emp)} ${onVac ? '<span class="tag tag-vacation" style="font-size:10px">em férias</span>' : ''}</div>
+          <div class="card-sub">${emp.name} · Admissão: ${adm} · ${years} ano${years!==1?'s':''}</div>
         </div>
       </div>
       <div class="card-rows">
@@ -811,7 +831,7 @@ function buildTeamCards(container) {
 function renderDashboard() {
   const isM  = S.role === 'manager';
   const emp  = S.currentEmployee;
-  document.getElementById('dash-title').textContent = isM ? 'Painel do Gestor' : `Olá, ${emp.name}`;
+  document.getElementById('dash-title').textContent = isM ? 'Painel do Gestor' : `Olá, ${dName(emp)}`;
   document.getElementById('dash-sub').textContent   = isM ? 'Visão geral da equipe' : 'Seu resumo de férias';
 
   const today   = fmtISO(new Date());
@@ -870,7 +890,7 @@ function renderCalendar() {
   const legend = document.getElementById('cal-legend');
   legend.innerHTML = '';
   S.employees.forEach((e,i) => {
-    legend.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${EMP_COLORS[i%EMP_COLORS.length]}"></span>${e.name}</div>`;
+    legend.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${EMP_COLORS[i%EMP_COLORS.length]}"></span>${dName(e)}</div>`;
   });
 
   const body   = document.getElementById('cal-body');
@@ -896,7 +916,7 @@ function renderCalendar() {
       const hasApproved = S.requests.some(r =>
         r.employee_id===e.id && r.status==='approved' && iso>=r.start_date && iso<=r.end_date);
       if (S.vacationDayTypes[e.id]?.[iso]==='F' || hasApproved) {
-        evs += `<div class="cal-ev ${EMP_CSS[i%6]}" title="${e.name} em férias">${e.name}</div>`;
+        evs += `<div class="cal-ev ${EMP_CSS[i%6]}" title="${dName(e)} em férias">${e.name}</div>`;
       }
     });
     body.innerHTML += `<div class="${cls}">
@@ -983,7 +1003,7 @@ function updateReqBalance(empId) {
   if (!emp) return;
   const { accumulated, used, balance } = calcBalance(emp);
   document.getElementById('req-balance-text').innerHTML =
-    `<strong>${emp.name}</strong> — Saldo disponível: <strong>${balance} dias úteis</strong> (${accumulated} acumulados – ${used} usados)`;
+    `<strong>${dName(emp)}</strong> — Saldo disponível: <strong>${balance} dias úteis</strong> (${accumulated} acumulados – ${used} usados)`;
 }
 
 function calcReqDays() {
@@ -1042,7 +1062,7 @@ function renderApprovals() {
       const { balance } = emp ? calcBalance(emp) : { balance: 0 };
       const bc = balance >= 0 ? 'var(--green-text)' : 'var(--red-text)';
       return `<tr>
-        <td><strong>${emp?.name || '—'}</strong></td>
+        <td><strong>${emp ? dName(emp) : '—'}</strong></td>
         <td>${fmtDate(r.start_date)}</td>
         <td>${fmtDate(r.end_date)}</td>
         <td>${r.work_days}</td>
@@ -1063,7 +1083,7 @@ function renderApprovals() {
     hb.innerHTML = history.map(r => {
       const emp = S.employees.find(e => e.id === r.employee_id);
       return `<tr>
-        <td>${emp?.name || '—'}</td>
+        <td>${emp ? dName(emp) : '—'}</td>
         <td>${fmtDate(r.start_date)} – ${fmtDate(r.end_date)}</td>
         <td>${r.work_days} DU</td>
         <td><span class="tag tag-${r.status}">${r.status==='approved'?'Aprovado':'Recusado'}</span></td>
@@ -1079,7 +1099,7 @@ async function approveRequest(id) {
   try {
     await sb.patch('requests', `?id=eq.${id}`, { status:'approved', responded_at: new Date().toISOString() });
     r.status = 'approved'; r.responded_at = new Date().toISOString();
-    toast(`Solicitação de ${S.employees.find(e=>e.id===r.employee_id)?.name} aprovada`);
+    toast(`Solicitação de ${dName(S.employees.find(e=>e.id===r.employee_id))} aprovada`);
     updateApprovalBadge(); renderApprovals(); renderCalendar();
     renderHistoryGrid();
   } catch(e) { toast('Erro: '+e.message, true); }
