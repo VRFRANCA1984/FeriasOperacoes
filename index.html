@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Controle de Férias — Tera Capital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<style>
+/* ── CONFIG: substitua com seus valores do Supabase ──────── */
+/* veja script no final do arquivo                           */
+
+:root{
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f0ede8;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --text:#1a1a18;--text2:#6b6a65;--text3:#a8a7a2;
+  --orange:#f97316;--orange-bg:#fff7ed;--orange-text:#c2410c;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
+  --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-text:#92400e;
+  --blue:#2563eb;--blue-bg:#eff4ff;--blue-text:#1d4ed8;
+  --sidebar-w:220px;--topbar-h:56px;--radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;padding-top:var(--topbar-h);padding-left:calc(var(--sidebar-w) + 24px)}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;z-index:200;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.topbar-logo{font-size:13px;font-weight:800;color:#1f2937;letter-spacing:.1em;text-transform:uppercase;position:absolute;left:50%;transform:translateX(-50%)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-user{font-size:12px;color:var(--text2)}
+.topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0}
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:middle}
+.sync-dot.loading{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:#1e2d4d;border-radius:0 20px 20px 0;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:calc(var(--topbar-h)+12px);left:12px;height:calc(100vh - var(--topbar-h) - 24px);overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:100}
+.sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sidebar-logo h1{font-size:14px;font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+.sidebar-logo p{font-size:11px;color:rgba(255,255,255,0.5);margin-top:3px}
+.sidebar-nav{padding:.75rem .6rem;flex:1}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.7);transition:background .15s,color .15s;margin-bottom:3px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff}
+.nav-item.active{background:#f97316;color:#fff;font-weight:600}
+.nav-item i{font-size:16px;flex-shrink:0}
+.nav-badge{background:rgba(255,255,255,0.25);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:auto;display:none}
+.nav-badge.vis{display:inline}
+.sidebar-footer{padding:.75rem 1rem;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:rgba(255,255,255,0.35)}
+
+/* MAIN */
+.main{min-height:calc(100vh - var(--topbar-h))}
+.sector{display:none;flex-direction:column}
+.sector.active{display:flex}
+.sector-body{padding:2rem 1.75rem;flex:1}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:12px;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.02em}
+.page-header-left p{font-size:13px;color:var(--text2);margin-top:3px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* BUTTONS */
+.btn{font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--orange-bg);color:var(--orange-text);border-color:#fed7aa}
+.btn-primary:hover{background:#ffe4c4}
+.btn-green{background:var(--green-bg);color:var(--green-text);border-color:#bbf7d0}
+.btn-green:hover{background:#dcfce7}
+.btn-red{background:var(--red-bg);color:var(--red-text);border-color:#fecaca}
+.btn-red:hover{background:#fee2e2}
+.btn-sm{font-size:12px;padding:5px 10px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;margin-bottom:1.75rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem;min-width:120px;flex:1;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:5px}
+.metric-value{font-size:24px;font-weight:500;line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.metric-c1{background:#eff6ff;border-color:#bfdbfe}.metric-c1 .metric-value{color:#1d4ed8}
+.metric-c2{background:#f0fdf4;border-color:#bbf7d0}.metric-c2 .metric-value{color:#15803d}
+.metric-c4{background:#fff7ed;border-color:#fed7aa}.metric-c4 .metric-value{color:#c2410c}
+.metric-red{background:#fef2f2;border-color:#fecaca}.metric-red .metric-value{color:#b91c1c}
+.metric-amber{background:#fffbeb;border-color:#fde68a}.metric-amber .metric-value{color:#92400e}
+
+/* INFO BAR */
+.info-bar{background:var(--orange-bg);border:1px solid #fed7aa;border-radius:var(--radius);padding:10px 14px;margin-bottom:1.5rem;font-size:13px;color:var(--orange-text);display:flex;gap:8px;align-items:center}
+
+/* CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:2rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:box-shadow .15s,transform .12s}
+.card:hover{border-color:var(--border2);box-shadow:0 6px 20px rgba(0,0,0,0.1);transform:translateY(-2px)}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.card-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;color:#fff}
+.card-name{font-size:14px;font-weight:600}
+.card-sub{font-size:12px;color:var(--text2)}
+.card-rows{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.card-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2)}
+.card-row strong{color:var(--text);font-weight:500}
+
+/* CYCLE INDICATOR */
+.cycle-bar{margin-top:10px}
+.cycle-label{font-size:10px;color:var(--text3);margin-bottom:3px;font-family:'DM Mono',monospace}
+.cycle-track{height:5px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin-bottom:4px}
+.cycle-fill{height:100%;border-radius:4px;transition:width .3s}
+.cycle-next{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* TAGS */
+.tag{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
+.tag-pending{background:var(--amber-bg);color:var(--amber-text)}
+.tag-approved{background:var(--green-bg);color:var(--green-text)}
+.tag-rejected{background:var(--red-bg);color:var(--red-text)}
+.tag-vacation{background:var(--green-bg);color:var(--green-text)}
+
+/* TABLE CARD */
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:1.5rem}
+.tcard-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600}
+.mini-table{width:100%;border-collapse:collapse;font-size:13px}
+.mini-table th{font-size:11px;color:var(--text2);font-weight:600;padding:8px 12px;border-bottom:2px solid var(--border);text-align:left;text-transform:uppercase;letter-spacing:.04em;background:var(--bg)}
+.mini-table td{padding:9px 12px;border-bottom:1px solid var(--border)}
+.mini-table tr:last-child td{border-bottom:none}
+.mini-table tr:hover td{background:var(--bg)}
+
+/* HISTORY GRID (like Inputs Férias) */
+.hgrid-wrap{overflow-x:auto}
+.hgrid{border-collapse:collapse;font-size:11px;font-family:'DM Mono',monospace;white-space:nowrap}
+.hgrid th{padding:5px 6px;background:#1e2d4d;color:rgba(255,255,255,0.85);font-weight:600;font-size:10px;text-align:center;position:sticky;top:0;z-index:2;border:1px solid rgba(255,255,255,0.12)}
+.hgrid th.emp-col{background:#f97316;color:#fff;min-width:38px}
+.hgrid th.date-col{text-align:left;min-width:90px;position:sticky;left:0;background:#1e2d4d;z-index:3}
+.hgrid td{padding:3px 6px;border:1px solid var(--border);text-align:center}
+.hgrid td.date-td{text-align:left;color:var(--text2);background:var(--bg);position:sticky;left:0;z-index:1;font-size:10px;padding:3px 8px}
+.hgrid td.day-td{min-width:38px}
+.hgrid tr.weekend td{background:#fafaf9}
+.hgrid tr.holiday td{background:#fff8f4}
+.hgrid td.vac-F{background:#dcfce7;color:#15803d;font-weight:700}
+.hgrid td.vac-T{background:#dbeafe;color:#1d4ed8;font-weight:700}
+.hgrid tr:hover td{filter:brightness(0.97)}
+.hgrid-filters{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.hgrid-legend{display:flex;gap:14px;margin-bottom:10px;font-size:12px;color:var(--text2)}
+.hgrid-legend span{display:flex;align-items:center;gap:5px}
+.hgrid-legend .dot{width:10px;height:10px;border-radius:2px}
+
+/* FORM PANELS */
+.form-panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem;display:none}
+.form-panel.vis{display:block}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px}
+.form-field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{font-family:'DM Sans',sans-serif;font-size:13px;width:100%;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--orange)}
+.form-field textarea{resize:vertical;min-height:65px}
+.form-field-full{grid-column:1/-1}
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cal-nav .cal-month-label{font-size:16px;font-weight:700;letter-spacing:-.02em;min-width:200px;text-align:center}
+.cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.cal-header-row{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg);border-bottom:1px solid var(--border)}
+.cal-dh{padding:7px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.cal-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:84px;padding:6px}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell.other-month{background:var(--bg)}
+.cal-cell.other-month .cal-dn{color:var(--border2)}
+.cal-cell.weekend{background:#fafaf9}
+.cal-cell.holiday{background:#fff8f4}
+.cal-dn{font-size:12px;font-weight:500;color:var(--text3);margin-bottom:3px}
+.cal-cell.today .cal-dn{background:var(--orange);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cal-ev{font-size:10px;padding:2px 5px;border-radius:3px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;color:#fff}
+.cal-holiday-label{font-size:9px;color:var(--orange-text);font-weight:600;margin-top:1px}
+.ec0{background:#f97316}.ec1{background:#374151}.ec2{background:#c2410c}.ec3{background:#6b7280}.ec4{background:#9a3412}.ec5{background:#1f2937}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+/* MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto}
+.modal-backdrop.vis{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;width:520px;max-width:96vw;margin-bottom:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.14)}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:1.25rem}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;font-size:13px;padding:10px 18px;border-radius:var(--radius);opacity:0;transition:opacity .25s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.toast.error{background:#b91c1c}
+.toast.success{background:#15803d}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:#1e2d4d;display:flex;align-items:center;justify-content:center;z-index:500;padding:16px}
+.login-card{background:var(--surface);border-radius:20px;padding:2.5rem 2.5rem 2rem;width:420px;max-width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.55)}
+.login-brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.login-brand-dot{width:32px;height:32px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+.login-brand-name{font-size:16px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+.login-product{font-size:13px;color:var(--text3);margin-bottom:2rem}
+.login-divider{height:1px;background:var(--border);margin:16px 0}
+.login-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:8px;display:block}
+.role-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.role-pill{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:12px;border:2px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.role-pill:hover{border-color:var(--orange);background:var(--orange-bg)}
+.role-pill.selected{border-color:var(--orange);background:var(--orange-bg)}
+.role-pill i{font-size:22px;color:var(--text3)}
+.role-pill.selected i{color:var(--orange)}
+.role-pill span{font-size:12px;font-weight:600;color:var(--text2)}
+.role-pill.selected span{color:var(--orange-text)}
+.login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.login-field label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text2)}
+.login-field select{font-family:'DM Sans',sans-serif;font-size:13px;width:100%;padding:9px 12px;border-radius:var(--radius);border:1.5px solid var(--border2);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;cursor:pointer}
+.login-field select:focus{border-color:var(--orange)}
+.login-btn{width:100%;padding:12px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.login-btn:hover{background:#ea6b10}
+.login-error{font-size:12px;color:var(--red-text);margin-top:8px;display:none}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(247,246,243,0.9);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.loading-overlay.hidden{display:none}
+.spinner{width:30px;height:30px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty i{font-size:32px;margin-bottom:10px;display:block}
+.empty strong{display:block;font-size:14px;color:var(--text2);margin-bottom:4px}
+
+/* RESPONSIVE */
+.mob-menu-btn{display:none;position:fixed;top:12px;left:12px;z-index:60;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;cursor:pointer;align-items:center;justify-content:center}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);transition:transform .2s}.sidebar.open{transform:none}body{padding-left:0}.mob-menu-btn{display:flex}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <span style="font-size:13px;color:var(--text2)">Conectando ao banco de dados...</span>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-dot">T</div>
+      <div class="login-brand-name">Tera Capital</div>
+    </div>
+    <div class="login-product">Controle de Férias — Time de Operações</div>
+    <div class="login-divider"></div>
+    <span class="login-label">Entrar como</span>
+    <div class="role-selector">
+      <button class="role-pill selected" id="pill-employee" onclick="selectRole('employee')">
+        <i class="ti ti-user"></i><span>Funcionário</span>
+      </button>
+      <button class="role-pill" id="pill-manager" onclick="selectRole('manager')">
+        <i class="ti ti-shield-check"></i><span>Gestor / RH</span>
+      </button>
+    </div>
+    <div class="login-field" id="lf-employee">
+      <label>Selecione seu nome</label>
+      <select id="login-employee"><option value="">Carregando...</option></select>
+    </div>
+    <button class="login-btn" onclick="doLogin()"><i class="ti ti-login"></i>Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="sync-dot loading" id="sync-dot"></span>
+    <span id="sync-label" style="font-size:12px;color:var(--text2)"></span>
+  </div>
+  <div class="topbar-logo">Controle de Férias</div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbar-user"></span>
+    <div class="topbar-avatar" id="topbar-avatar" title="Sair" onclick="logout()"></div>
+  </div>
+</header>
+
+<button class="mob-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+  <i class="ti ti-menu-2" style="font-size:18px"></i>
+</button>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Tera Capital</h1>
+    <p>Férias — Operações</p>
+  </div>
+  <div class="sidebar-nav">
+    <button class="nav-item active" id="nav-dashboard" onclick="showSector('dashboard')">
+      <i class="ti ti-layout-dashboard"></i>Dashboard
+    </button>
+    <button class="nav-item" id="nav-calendar" onclick="showSector('calendar')">
+      <i class="ti ti-calendar"></i>Calendário
+    </button>
+    <button class="nav-item" id="nav-history" onclick="showSector('history')">
+      <i class="ti ti-table"></i>Histórico
+    </button>
+    <button class="nav-item" id="nav-request" onclick="showSector('request')">
+      <i class="ti ti-beach"></i>Solicitar Férias
+    </button>
+    <button class="nav-item" id="nav-approvals" onclick="showSector('approvals')" style="display:none">
+      <i class="ti ti-checks"></i>Aprovações
+      <span class="nav-badge" id="approval-badge">0</span>
+    </button>
+    <button class="nav-item" id="nav-team" onclick="showSector('team')" style="display:none">
+      <i class="ti ti-users"></i>Equipe
+    </button>
+  </div>
+  <div class="sidebar-footer">Time de Operações</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="sector active" id="sector-dashboard">
+<div class="sector-body">
+  <div class="page-header">
+    <div class="page-header-left">
+      <h2 id="dash-title">Painel</h2>
+      <p id="dash-sub">Resumo de férias</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showSector('request')"><i class="ti ti-plus"></i>Nova Solicitação</button>
+    </div>
+  </div>
+  <div class="metrics" id="dash-metrics"></div>
+  <div id="dash-my-requests">
+    <div class="tcard">
+      <div class="tcard-head">Minhas Solicitações
+        <button class="btn btn-sm btn-primary" onclick="showSector('request')"><i class="ti ti-plus"></i>Nova</button>
+      </div>
+      <table class="mini-table"><thead><tr>
+        <th>Período</th><th>Dias úteis</th><th>Solicitado em</th><th>Status</th><th></th>
+      </tr></thead><tbody id="my-req-tbody"></tbody></table>
+    </div>
+  </div>
+  <div id="dash-team-section" style="display:none">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Equipe</div>
+    <div class="cards-grid" id="dash-team-grid"></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ CALENDAR ═══ -->
+<div class="sector" id="sector-calendar">
+<div class="sector-body">
+  <div class="page-header">
+    <div class="page-header-left"><h2>Calendário da Equipe</h2><p>Férias por período</p></div>
+  </div>
+  <div class="legend" id="cal-legend"></div>
+  <div class="cal-nav">
+    <button class="btn btn-sm" onclick="calNav(-1)"><i class="ti ti-chevron-left"></i>Anterior</button>
+    <span class="cal-month-label" id="cal-month-label"></span>
+    <button class="btn btn-sm" onclick="calNav(1)">Próximo<i class="ti ti-chevron-right"></i></button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-header-row">
+      <div class="cal-dh">Dom</div><div class="cal-dh">Seg</div><div class="cal-dh">Ter</div>
+      <div class="cal-dh">Qua</div><div class="cal-dh">Qui</div><div class="cal-dh">Sex</div><div class="cal-dh">Sáb</div>
+    </div>
+    <div class="cal-body" id="cal-body"></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ HISTORY GRID ═══ -->
+<div class="sector" id="sector-history">
+<div class="sector-body">
+  <div class="page-header">
+    <div class="page-header-left"><h2>Histórico de Férias</h2><p>Visão dia a dia por funcionário</p></div>
+  </div>
+  <div class="hgrid-filters">
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:12px;color:var(--text2)">Ano:</label>
+      <select id="hgrid-year" class="form-field" style="padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border2);font-family:'DM Sans',sans-serif;font-size:13px" onchange="renderHistoryGrid()">
+        <option>2024</option><option>2025</option><option selected>2026</option><option>2027</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:12px;color:var(--text2)">Funcionário:</label>
+      <select id="hgrid-emp" class="form-field" style="padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border2);font-family:'DM Sans',sans-serif;font-size:13px" onchange="renderHistoryGrid()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+  </div>
+  <div class="hgrid-legend">
+    <span><div class="dot" style="background:#dcfce7;border:1px solid #86efac"></div>Férias (F)</span>
+    <span><div class="dot" style="background:#dbeafe;border:1px solid #93c5fd"></div>Feriado trab. (T)</span>
+    <span><div class="dot" style="background:#fafaf9;border:1px solid #e5e7eb"></div>Fim de semana</span>
+    <span><div class="dot" style="background:#fff8f4;border:1px solid #fed7aa"></div>Feriado nacional</span>
+  </div>
+  <div class="tcard">
+    <div class="hgrid-wrap">
+      <table class="hgrid" id="history-grid-table"></table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ REQUEST ═══ -->
+<div class="sector" id="sector-request">
+<div class="sector-body">
+  <div class="page-header">
+    <div class="page-header-left"><h2>Solicitar Férias</h2><p>Preencha o período desejado</p></div>
+  </div>
+  <div class="info-bar" id="req-balance-bar"><i class="ti ti-info-circle"></i><span id="req-balance-text">—</span></div>
+  <div class="form-panel vis" style="max-width:560px">
+    <div class="form-grid">
+      <div class="form-field form-field-full" id="req-emp-field" style="display:none">
+        <label>Funcionário</label>
+        <select id="req-employee" onchange="updateReqBalance()"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Data de início</label>
+        <input type="date" id="req-start" onchange="calcReqDays()">
+      </div>
+      <div class="form-field">
+        <label>Data de término</label>
+        <input type="date" id="req-end" onchange="calcReqDays()">
+      </div>
+      <div class="form-field form-field-full">
+        <label>Dias úteis calculados</label>
+        <input type="text" id="req-days" readonly placeholder="Selecione as datas acima">
+      </div>
+      <div class="form-field form-field-full">
+        <label>Observação (opcional)</label>
+        <textarea id="req-note" rows="2" placeholder="Ex: férias de verão…"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitRequest()"><i class="ti ti-check"></i>Enviar Solicitação</button>
+      <button class="btn" onclick="showSector('dashboard')">Cancelar</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ APPROVALS ═══ -->
+<div class="sector" id="sector-approvals">
+<div class="sector-body">
+  <div class="page-header">
+    <div class="page-header-left"><h2>Aprovações</h2><p>Revise as solicitações da equipe</p></div>
+  </div>
+  <div class="tcard" style="margin-bottom:1.5rem">
+    <div class="tcard-head">Pendentes</div>
+    <table class="mini-table"><thead><tr>
+      <th>Funcionário</th><th>Início</th><th>Fim</th><th>Dias úteis</th><th>Solicitado em</th><th>Saldo atual</th><th>Ações</th>
+    </tr></thead><tbody id="approvals-tbody"></tbody></table>
+  </div>
+  <div class="tcard">
+    <div class="tcard-head">Histórico de aprovações</div>
+    <table class="mini-table"><thead><tr>
+      <th>Funcionário</th><th>Período</th><th>Dias</th><th>Status</th><th>Respondido em</th>
+    </tr></thead><tbody id="history-tbody"></tbody></table>
+  </div>
+</div>
+</div>
+
+<!-- ═══ TEAM ═══ -->
+<div class="sector" id="sector-team">
+<div class="sector-body">
+  <div class="page-header">
+    <div class="page-header-left"><h2>Equipe</h2><p>Saldos e ciclos de cada funcionário</p></div>
+  </div>
+  <div class="cards-grid" id="team-grid"></div>
+</div>
+</div>
+
+</div><!-- /main -->
+
+<!-- MODAL: REJECT -->
+<div class="modal-backdrop" id="modal-reject">
+  <div class="modal">
+    <div class="modal-title">Recusar Solicitação</div>
+    <div class="form-field">
+      <label>Motivo da recusa</label>
+      <textarea id="reject-reason" rows="3" placeholder="Ex: período de pico operacional…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-reject')">Cancelar</button>
+      <button class="btn btn-red" onclick="confirmReject()"><i class="ti ti-x"></i>Confirmar Recusa</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CONFIGURAÇÃO — substitua com seus dados Supabase
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL  = 'SUPABASE_URL_PLACEHOLDER';
+const SUPABASE_ANON = 'SUPABASE_ANON_KEY_PLACEHOLDER';
+
+// ═══════════════════════════════════════════════════
+//  SUPABASE REST CLIENT (sem SDK extra)
+// ═══════════════════════════════════════════════════
+const sb = {
+  headers: {
+    'apikey': SUPABASE_ANON,
+    'Authorization': `Bearer ${SUPABASE_ANON}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  },
+  url: (table, qs='') => `${SUPABASE_URL}/rest/v1/${table}${qs}`,
+
+  async get(table, qs='') {
+    const r = await fetch(sb.url(table, qs), { headers: sb.headers });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async post(table, body) {
+    const r = await fetch(sb.url(table), {
+      method:'POST', headers: sb.headers, body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async patch(table, qs, body) {
+    const r = await fetch(sb.url(table, qs), {
+      method:'PATCH', headers: { ...sb.headers, 'Prefer':'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+};
+
+// ═══════════════════════════════════════════════════
+//  APP STATE
+// ═══════════════════════════════════════════════════
+const EMP_COLORS = ['#f97316','#374151','#c2410c','#6b7280','#9a3412','#1f2937'];
+const EMP_CSS    = ['ec0','ec1','ec2','ec3','ec4','ec5'];
+
+let S = {
+  role: 'employee',
+  currentEmployee: null,   // { id, name, admission_date, days_per_year }
+  employees: [],
+  vacationDays: {},         // { emp_id: Set<'YYYY-MM-DD'> }
+  vacationDayTypes: {},     // { emp_id: { 'YYYY-MM-DD': 'F'|'T' } }
+  holidays: new Set(),      // Set<'YYYY-MM-DD'>
+  holidayNames: {},         // { 'YYYY-MM-DD': name }
+  requests: [],
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
+  rejectTargetId: null,
+};
+
+// ═══════════════════════════════════════════════════
+//  DATE HELPERS
+// ═══════════════════════════════════════════════════
+const fmtDate  = d => new Date(d+'T00:00:00').toLocaleDateString('pt-BR');
+const fmtISO   = d => { const dt = d instanceof Date ? d : new Date(d+'T00:00:00'); return dt.toISOString().slice(0,10); };
+const fromISO  = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const isWeekend = s => { const d = fromISO(s).getDay(); return d===0||d===6; };
+const isHoliday = s => S.holidays.has(s);
+
+function countWorkDays(startISO, endISO) {
+  let n = 0;
+  const c = fromISO(startISO), e = fromISO(endISO);
+  while (c <= e) {
+    const iso = fmtISO(c);
+    if (!isWeekend(iso) && !isHoliday(iso)) n++;
+    c.setDate(c.getDate()+1);
+  }
+  return n;
+}
+
+// ═══════════════════════════════════════════════════
+//  CYCLE CALCULATION — auto-renews on anniversary
+// ═══════════════════════════════════════════════════
+function calcBalance(emp) {
+  const today = new Date();
+  const adm   = fromISO(emp.admission_date);
+  const dpy   = emp.days_per_year || 21;
+
+  // Count complete years since admission up to today
+  let years = today.getFullYear() - adm.getFullYear();
+  const annivThisYear = new Date(today.getFullYear(), adm.getMonth(), adm.getDate());
+  if (today < annivThisYear) years--;
+  if (years < 0) years = 0;
+
+  const accumulated = years * dpy;
+
+  // Count used days from vacation_days (only workdays with type F)
+  const days = S.vacationDayTypes[emp.id] || {};
+  const usedFromHistory = Object.entries(days)
+    .filter(([date, type]) => type === 'F' && !isWeekend(date))
+    .length;
+
+  // Add approved requests
+  const usedFromRequests = S.requests
+    .filter(r => r.employee_id === emp.id && r.status === 'approved')
+    .reduce((sum, r) => sum + r.work_days, 0);
+
+  const used    = usedFromHistory + usedFromRequests;
+  const balance = accumulated - used;
+
+  // Next anniversary
+  let nextAnniv = new Date(today.getFullYear(), adm.getMonth(), adm.getDate());
+  if (nextAnniv <= today) nextAnniv.setFullYear(nextAnniv.getFullYear()+1);
+
+  // Days until next cycle
+  const daysUntilNext = Math.ceil((nextAnniv - today) / 86400000);
+
+  // Progress through current cycle
+  const cycleStart = new Date(nextAnniv);
+  cycleStart.setFullYear(cycleStart.getFullYear()-1);
+  const cycleLen   = nextAnniv - cycleStart;
+  const cycleElapsed = today - cycleStart;
+  const cyclePct   = Math.min(100, Math.round(cycleElapsed / cycleLen * 100));
+
+  return { accumulated, used, balance, nextAnniv, daysUntilNext, cyclePct, years };
+}
+
+// ═══════════════════════════════════════════════════
+//  LOAD ALL DATA
+// ═══════════════════════════════════════════════════
+async function loadAll() {
+  setSyncState('loading', 'Carregando...');
+  try {
+    const [employees, holidays, vacDays, requests] = await Promise.all([
+      sb.get('employees', '?active=eq.true&order=name'),
+      sb.get('holidays', '?order=date'),
+      sb.get('vacation_days', '?order=date'),
+      sb.get('requests', '?order=submitted_at.desc'),
+    ]);
+
+    S.employees = employees;
+
+    S.holidays = new Set(holidays.map(h => h.date));
+    S.holidayNames = Object.fromEntries(holidays.map(h => [h.date, h.name]));
+
+    S.vacationDays = {};
+    S.vacationDayTypes = {};
+    vacDays.forEach(vd => {
+      if (!S.vacationDays[vd.employee_id])     S.vacationDays[vd.employee_id] = new Set();
+      if (!S.vacationDayTypes[vd.employee_id]) S.vacationDayTypes[vd.employee_id] = {};
+      S.vacationDays[vd.employee_id].add(vd.date);
+      S.vacationDayTypes[vd.employee_id][vd.date] = vd.type;
+    });
+
+    S.requests = requests;
+
+    setSyncState('ok', 'Dados em tempo real');
+    return true;
+  } catch(e) {
+    setSyncState('error', 'Erro de conexão');
+    console.error(e);
+    return false;
+  }
+}
+
+function setSyncState(state, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state==='loading'?' loading':'');
+  dot.style.background = state==='ok' ? 'var(--green)' : state==='error' ? 'var(--red)' : 'var(--amber)';
+  if (lbl) lbl.textContent = label;
+}
+
+// ═══════════════════════════════════════════════════
+//  BOOTSTRAP
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  // Check if Supabase is configured
+  if (SUPABASE_URL.includes('PLACEHOLDER')) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').textContent = '⚠ Configure SUPABASE_URL e SUPABASE_ANON_KEY no arquivo index.html';
+    return;
+  }
+
+  const ok = await loadAll();
+  document.getElementById('loading').classList.add('hidden');
+
+  if (ok) {
+    // Populate login select
+    const sel = document.getElementById('login-employee');
+    sel.innerHTML = '<option value="">Selecione...</option>';
+    S.employees.forEach(e => {
+      sel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    });
+    document.getElementById('login-screen').style.display = 'flex';
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').textContent = 'Não foi possível conectar ao Supabase. Verifique as credenciais.';
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════════════════
+let _selectedRole = 'employee';
+
+function selectRole(role) {
+  _selectedRole = role;
+  document.getElementById('pill-employee').classList.toggle('selected', role==='employee');
+  document.getElementById('pill-manager').classList.toggle('selected', role==='manager');
+  document.getElementById('lf-employee').style.display = role==='employee' ? 'block' : 'none';
+}
+
+function doLogin() {
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (_selectedRole === 'employee') {
+    const empId = parseInt(document.getElementById('login-employee').value);
+    if (!empId) { errEl.style.display='block'; errEl.textContent='Selecione um funcionário'; return; }
+    S.currentEmployee = S.employees.find(e => e.id === empId);
+    S.role = 'employee';
+  } else {
+    S.role = 'manager';
+    S.currentEmployee = { id: 0, name: 'Gestor', admission_date: '' };
+  }
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('topbar-avatar').textContent = S.currentEmployee.name.slice(0,2).toUpperCase();
+  document.getElementById('topbar-user').textContent = S.role==='manager' ? 'Gestor / RH' : S.currentEmployee.name;
+
+  if (S.role === 'manager') {
+    document.getElementById('nav-approvals').style.display = 'flex';
+    document.getElementById('nav-team').style.display = 'flex';
+  }
+
+  // populate req-employee
+  const reqSel = document.getElementById('req-employee');
+  reqSel.innerHTML = '<option value="">Selecione...</option>';
+  S.employees.forEach(e => reqSel.innerHTML += `<option value="${e.id}">${e.name}</option>`);
+
+  // populate hgrid-emp
+  const hSel = document.getElementById('hgrid-emp');
+  hSel.innerHTML = '<option value="">Todos</option>';
+  S.employees.forEach(e => hSel.innerHTML += `<option value="${e.id}">${e.name}</option>`);
+
+  updateApprovalBadge();
+  showSector('dashboard');
+  renderCalendar();
+}
+
+function logout() { location.reload(); }
+
+// ═══════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════
+function showSector(id) {
+  document.querySelectorAll('.sector').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sector-'+id).classList.add('active');
+  const nav = document.getElementById('nav-'+id);
+  if (nav) nav.classList.add('active');
+  if (id==='dashboard') renderDashboard();
+  if (id==='calendar')  renderCalendar();
+  if (id==='history')   renderHistoryGrid();
+  if (id==='approvals') renderApprovals();
+  if (id==='team')      renderTeam();
+  if (id==='request')   renderRequestPage();
+}
+
+// ═══════════════════════════════════════════════════
+//  TEAM CARDS (shared renderer)
+// ═══════════════════════════════════════════════════
+function buildTeamCards(container) {
+  container.innerHTML = '';
+  S.employees.forEach((emp, i) => {
+    const { accumulated, used, balance, nextAnniv, daysUntilNext, cyclePct, years } = calcBalance(emp);
+    const color    = EMP_COLORS[i % EMP_COLORS.length];
+    const adm      = fmtDate(emp.admission_date);
+    const today    = fmtISO(new Date());
+    const onVac    = S.vacationDayTypes[emp.id]?.[today] === 'F' ||
+                     S.requests.some(r => r.employee_id===emp.id && r.status==='approved' &&
+                       today >= r.start_date && today <= r.end_date);
+    const pending  = S.requests.filter(r => r.employee_id===emp.id && r.status==='pending').length;
+    const balColor = balance > 0 ? 'var(--green-text)' : balance < 0 ? 'var(--red-text)' : 'var(--text3)';
+    const nextFmt  = nextAnniv.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
+
+    container.innerHTML += `
+    <div class="card" style="border-top:3px solid ${color}">
+      <div class="card-head">
+        <div class="card-av" style="background:${color}">${emp.name.slice(0,2)}</div>
+        <div>
+          <div class="card-name">${emp.name} ${onVac ? '<span class="tag tag-vacation" style="font-size:10px">em férias</span>' : ''}</div>
+          <div class="card-sub">Admissão: ${adm} · ${years} ano${years!==1?'s':''}</div>
+        </div>
+      </div>
+      <div class="card-rows">
+        <div class="card-row"><span>DU Acumuladas</span><strong>${accumulated}</strong></div>
+        <div class="card-row"><span>DU Utilizadas</span><strong style="color:var(--amber-text)">${used}</strong></div>
+        <div class="card-row"><span>Saldo disponível</span><strong style="color:${balColor}">${balance >= 0 ? '+' : ''}${balance}</strong></div>
+        ${pending > 0 ? `<div class="card-row"><span>Pendentes</span><strong style="color:var(--orange-text)">${pending}</strong></div>` : ''}
+      </div>
+      <div class="cycle-bar">
+        <div class="cycle-label">Ciclo atual: ${cyclePct}% concluído</div>
+        <div class="cycle-track"><div class="cycle-fill" style="width:${cyclePct}%;background:${color}"></div></div>
+        <div class="cycle-next">Próximo ciclo em ${nextFmt} (${daysUntilNext}d) → +${emp.days_per_year} DU</div>
+      </div>
+    </div>`;
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════
+function renderDashboard() {
+  const isM  = S.role === 'manager';
+  const emp  = S.currentEmployee;
+  document.getElementById('dash-title').textContent = isM ? 'Painel do Gestor' : `Olá, ${emp.name}`;
+  document.getElementById('dash-sub').textContent   = isM ? 'Visão geral da equipe' : 'Seu resumo de férias';
+
+  const today   = fmtISO(new Date());
+  const pending = S.requests.filter(r => r.status === 'pending');
+
+  if (isM) {
+    const onVac = S.employees.filter(e => {
+      return S.vacationDayTypes[e.id]?.[today] === 'F' ||
+             S.requests.some(r => r.employee_id===e.id && r.status==='approved' &&
+               today >= r.start_date && today <= r.end_date);
+    }).length;
+    document.getElementById('dash-metrics').innerHTML = `
+      <div class="metric metric-c1"><div class="metric-label">Funcionários</div><div class="metric-value">${S.employees.length}</div></div>
+      <div class="metric metric-c2"><div class="metric-label">Em férias hoje</div><div class="metric-value">${onVac}</div></div>
+      <div class="metric metric-c4"><div class="metric-label">Pendentes</div><div class="metric-value">${pending.length}</div></div>`;
+    document.getElementById('dash-my-requests').style.display  = 'none';
+    document.getElementById('dash-team-section').style.display = 'block';
+    buildTeamCards(document.getElementById('dash-team-grid'));
+  } else {
+    const { accumulated, used, balance } = calcBalance(emp);
+    const myReqs = S.requests.filter(r => r.employee_id === emp.id);
+    document.getElementById('dash-metrics').innerHTML = `
+      <div class="metric metric-c1"><div class="metric-label">DU Acumuladas</div><div class="metric-value">${accumulated}</div></div>
+      <div class="metric metric-amber"><div class="metric-label">DU Utilizadas</div><div class="metric-value">${used}</div></div>
+      <div class="metric ${balance>=0?'metric-c2':'metric-red'}"><div class="metric-label">Saldo</div><div class="metric-value">${balance}</div></div>
+      <div class="metric metric-c1"><div class="metric-label">Solicitações</div><div class="metric-value">${myReqs.length}</div></div>`;
+    document.getElementById('dash-my-requests').style.display  = 'block';
+    document.getElementById('dash-team-section').style.display = 'none';
+    renderMyRequests();
+  }
+}
+
+function renderMyRequests() {
+  const myReqs = S.requests.filter(r => r.employee_id === S.currentEmployee.id);
+  const tb = document.getElementById('my-req-tbody');
+  if (!myReqs.length) {
+    tb.innerHTML = `<tr><td colspan="5"><div class="empty"><i class="ti ti-calendar-off"></i><strong>Nenhuma solicitação</strong>Clique em "Nova Solicitação".</div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = myReqs.map(r => `<tr>
+    <td>${fmtDate(r.start_date)} – ${fmtDate(r.end_date)}</td>
+    <td>${r.work_days}</td>
+    <td>${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</td>
+    <td><span class="tag tag-${r.status}">${r.status==='pending'?'Pendente':r.status==='approved'?'Aprovado':'Recusado'}</span></td>
+    <td>${r.status==='pending' ? `<button class="btn btn-sm btn-red" onclick="cancelRequest(${r.id})"><i class="ti ti-x"></i>Cancelar</button>` : ''}</td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  CALENDAR
+// ═══════════════════════════════════════════════════
+function renderCalendar() {
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('cal-month-label').textContent = `${months[S.calMonth]} ${S.calYear}`;
+
+  const legend = document.getElementById('cal-legend');
+  legend.innerHTML = '';
+  S.employees.forEach((e,i) => {
+    legend.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${EMP_COLORS[i%EMP_COLORS.length]}"></span>${e.name}</div>`;
+  });
+
+  const body   = document.getElementById('cal-body');
+  body.innerHTML = '';
+  const today  = fmtISO(new Date());
+  const first  = new Date(S.calYear, S.calMonth, 1);
+  const last   = new Date(S.calYear, S.calMonth+1, 0);
+  const offset = first.getDay();
+
+  for (let i = 0; i < offset; i++) {
+    const pd = new Date(first); pd.setDate(pd.getDate()-(offset-i));
+    body.innerHTML += `<div class="cal-cell other-month"><div class="cal-dn">${pd.getDate()}</div></div>`;
+  }
+
+  for (let d = 1; d <= last.getDate(); d++) {
+    const iso   = `${S.calYear}-${String(S.calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isT   = iso === today;
+    const wknd  = isWeekend(iso);
+    const hol   = isHoliday(iso);
+    let cls = 'cal-cell'+(isT?' today':'')+(wknd?' weekend':'')+(hol?' holiday':'');
+    let evs = '';
+    S.employees.forEach((e,i) => {
+      const hasApproved = S.requests.some(r =>
+        r.employee_id===e.id && r.status==='approved' && iso>=r.start_date && iso<=r.end_date);
+      if (S.vacationDayTypes[e.id]?.[iso]==='F' || hasApproved) {
+        evs += `<div class="cal-ev ${EMP_CSS[i%6]}" title="${e.name} em férias">${e.name}</div>`;
+      }
+    });
+    body.innerHTML += `<div class="${cls}">
+      <div class="cal-dn">${d}</div>${evs}
+      ${hol ? `<div class="cal-holiday-label">${S.holidayNames[iso]||'feriado'}</div>` : ''}
+    </div>`;
+  }
+
+  const total = offset + last.getDate();
+  const rem   = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= rem; i++)
+    body.innerHTML += `<div class="cal-cell other-month"><div class="cal-dn">${i}</div></div>`;
+}
+
+function calNav(dir) {
+  S.calMonth += dir;
+  if (S.calMonth < 0)  { S.calMonth = 11; S.calYear--; }
+  if (S.calMonth > 11) { S.calMonth = 0;  S.calYear++; }
+  renderCalendar();
+}
+
+// ═══════════════════════════════════════════════════
+//  HISTORY GRID (Inputs Férias-style)
+// ═══════════════════════════════════════════════════
+function renderHistoryGrid() {
+  const year    = parseInt(document.getElementById('hgrid-year').value);
+  const empId   = parseInt(document.getElementById('hgrid-emp').value) || null;
+  const emps    = empId ? S.employees.filter(e => e.id === empId) : S.employees;
+  const table   = document.getElementById('history-grid-table');
+
+  // Build header
+  let thead = '<thead><tr>';
+  thead += `<th class="date-col">Data</th>`;
+  emps.forEach((e,i) => {
+    thead += `<th class="emp-col" style="background:${EMP_COLORS[S.employees.indexOf(e)%EMP_COLORS.length]}">${e.name}</th>`;
+  });
+  thead += '</tr></thead>';
+
+  // Build rows Jan 1 → Dec 31
+  const start = new Date(year, 0, 1);
+  const end   = new Date(year, 11, 31);
+  let tbody = '<tbody>';
+  const cur = new Date(start);
+
+  while (cur <= end) {
+    const iso    = fmtISO(cur);
+    const wknd   = isWeekend(iso);
+    const hol    = isHoliday(iso);
+    const dayName = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][cur.getDay()];
+    let rowClass = wknd ? 'weekend' : hol ? 'holiday' : '';
+
+    tbody += `<tr class="${rowClass}">`;
+    tbody += `<td class="date-td">${iso.slice(5)} ${dayName}${hol ? ' 🎉' : ''}</td>`;
+
+    emps.forEach(e => {
+      const type = S.vacationDayTypes[e.id]?.[iso];
+      // Also check approved requests
+      const inRequest = S.requests.some(r =>
+        r.employee_id===e.id && r.status==='approved' && iso>=r.start_date && iso<=r.end_date);
+      const display = type || (inRequest ? 'F' : null);
+      tbody += `<td class="day-td ${display ? 'vac-'+display : ''}">${display || ''}</td>`;
+    });
+
+    tbody += '</tr>';
+    cur.setDate(cur.getDate()+1);
+  }
+  tbody += '</tbody>';
+
+  table.innerHTML = thead + tbody;
+}
+
+// ═══════════════════════════════════════════════════
+//  REQUEST
+// ═══════════════════════════════════════════════════
+function renderRequestPage() {
+  const isM = S.role === 'manager';
+  document.getElementById('req-emp-field').style.display = isM ? 'block' : 'none';
+  if (!isM) updateReqBalance(S.currentEmployee.id);
+}
+
+function updateReqBalance(empId) {
+  const id  = empId || parseInt(document.getElementById('req-employee').value);
+  const emp = S.employees.find(e => e.id === id);
+  if (!emp) return;
+  const { accumulated, used, balance } = calcBalance(emp);
+  document.getElementById('req-balance-text').innerHTML =
+    `<strong>${emp.name}</strong> — Saldo disponível: <strong>${balance} dias úteis</strong> (${accumulated} acumulados – ${used} usados)`;
+}
+
+function calcReqDays() {
+  const s = document.getElementById('req-start').value;
+  const e = document.getElementById('req-end').value;
+  if (!s || !e) return;
+  if (e < s) { document.getElementById('req-days').value = 'Data inválida'; return; }
+  document.getElementById('req-days').value = countWorkDays(s, e) + ' dias úteis';
+}
+
+async function submitRequest() {
+  const isM     = S.role === 'manager';
+  const empId   = isM ? parseInt(document.getElementById('req-employee').value) : S.currentEmployee.id;
+  const start   = document.getElementById('req-start').value;
+  const end     = document.getElementById('req-end').value;
+  const note    = document.getElementById('req-note').value;
+
+  if (!empId) { toast('Selecione um funcionário', true); return; }
+  if (!start || !end) { toast('Selecione as datas', true); return; }
+  if (end < start) { toast('Data de término inválida', true); return; }
+
+  const emp     = S.employees.find(e => e.id === empId);
+  const wd      = countWorkDays(start, end);
+  const { balance } = calcBalance(emp);
+
+  if (wd > balance) { toast(`Saldo insuficiente — disponível: ${balance} DU`, true); return; }
+
+  try {
+    const [newReq] = await sb.post('requests', {
+      employee_id: empId, start_date: start, end_date: end,
+      work_days: wd, note: note || null, status: 'pending'
+    });
+    S.requests.unshift(newReq);
+    ['req-start','req-end','req-note','req-days'].forEach(id => document.getElementById(id).value = '');
+    toast('Solicitação enviada!');
+    updateApprovalBadge();
+    showSector('dashboard');
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, true);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  APPROVALS
+// ═══════════════════════════════════════════════════
+function renderApprovals() {
+  const pending = S.requests.filter(r => r.status === 'pending');
+  const history = S.requests.filter(r => r.status !== 'pending');
+  const tb = document.getElementById('approvals-tbody');
+
+  if (!pending.length) {
+    tb.innerHTML = `<tr><td colspan="7"><div class="empty"><i class="ti ti-checks"></i><strong>Nenhuma pendência</strong></div></td></tr>`;
+  } else {
+    tb.innerHTML = pending.map(r => {
+      const emp = S.employees.find(e => e.id === r.employee_id);
+      const { balance } = emp ? calcBalance(emp) : { balance: 0 };
+      const bc = balance >= 0 ? 'var(--green-text)' : 'var(--red-text)';
+      return `<tr>
+        <td><strong>${emp?.name || '—'}</strong></td>
+        <td>${fmtDate(r.start_date)}</td>
+        <td>${fmtDate(r.end_date)}</td>
+        <td>${r.work_days}</td>
+        <td>${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</td>
+        <td style="font-weight:600;color:${bc}">${balance} DU</td>
+        <td><div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-green" onclick="approveRequest(${r.id})"><i class="ti ti-check"></i>Aprovar</button>
+          <button class="btn btn-sm btn-red" onclick="openRejectModal(${r.id})"><i class="ti ti-x"></i>Recusar</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const hb = document.getElementById('history-tbody');
+  if (!history.length) {
+    hb.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Sem histórico</td></tr>`;
+  } else {
+    hb.innerHTML = history.map(r => {
+      const emp = S.employees.find(e => e.id === r.employee_id);
+      return `<tr>
+        <td>${emp?.name || '—'}</td>
+        <td>${fmtDate(r.start_date)} – ${fmtDate(r.end_date)}</td>
+        <td>${r.work_days} DU</td>
+        <td><span class="tag tag-${r.status}">${r.status==='approved'?'Aprovado':'Recusado'}</span></td>
+        <td>${r.responded_at ? new Date(r.responded_at).toLocaleDateString('pt-BR') : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+async function approveRequest(id) {
+  const r = S.requests.find(x => x.id === id);
+  if (!r) return;
+  try {
+    await sb.patch('requests', `?id=eq.${id}`, { status:'approved', responded_at: new Date().toISOString() });
+    r.status = 'approved'; r.responded_at = new Date().toISOString();
+    toast(`Solicitação de ${S.employees.find(e=>e.id===r.employee_id)?.name} aprovada`);
+    updateApprovalBadge(); renderApprovals(); renderCalendar();
+    renderHistoryGrid();
+  } catch(e) { toast('Erro: '+e.message, true); }
+}
+
+function openRejectModal(id) {
+  S.rejectTargetId = id;
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('modal-reject').classList.add('vis');
+}
+
+async function confirmReject() {
+  const r = S.requests.find(x => x.id === S.rejectTargetId);
+  if (!r) return;
+  const reason = document.getElementById('reject-reason').value;
+  try {
+    await sb.patch('requests', `?id=eq.${r.id}`, {
+      status:'rejected', reject_reason: reason, responded_at: new Date().toISOString()
+    });
+    r.status = 'rejected'; r.reject_reason = reason; r.responded_at = new Date().toISOString();
+    closeModal('modal-reject');
+    toast(`Solicitação recusada`);
+    updateApprovalBadge(); renderApprovals();
+  } catch(e) { toast('Erro: '+e.message, true); }
+}
+
+async function cancelRequest(id) {
+  try {
+    await sb.patch('requests', `?id=eq.${id}`, { status:'rejected', reject_reason:'Cancelado pelo funcionário', responded_at: new Date().toISOString() });
+    const r = S.requests.find(x => x.id === id);
+    if (r) { r.status = 'rejected'; }
+    toast('Solicitação cancelada');
+    renderDashboard(); updateApprovalBadge();
+  } catch(e) { toast('Erro: '+e.message, true); }
+}
+
+function updateApprovalBadge() {
+  const n = S.requests.filter(r => r.status === 'pending').length;
+  const b = document.getElementById('approval-badge');
+  b.textContent = n; b.classList.toggle('vis', n > 0);
+}
+
+// ═══════════════════════════════════════════════════
+//  TEAM
+// ═══════════════════════════════════════════════════
+function renderTeam() { buildTeamCards(document.getElementById('team-grid')); }
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+let _toastTimer;
+function toast(msg, isErr=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' error' : ' success');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('vis'); }
+
+document.getElementById('modal-reject').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('modal-reject');
+});
+</script>
+</body>
+</html>
